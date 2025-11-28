@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum LaptopCondition {
+  NEW
+  GOOD
+  USED
+  DAMAGED
+}
+
+model User {
+  id               Int          @id @default(autoincrement())
+  name             String
+  email            String       @unique
+  password         String
+  designation      String
+  department       String
+  role             Role         @default(USER)
+  assignedLaptop   Laptop?      @relation("AssignedLaptop", fields: [assignedLaptopId], references: [id])
+  assignedLaptopId Int?         @unique
+  purchases        Purchase[]
+  listedLaptops    LaptopSale[] // admin list kndo laptops sale lai
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+}
+
+model Laptop {
+  id             Int             @id @default(autoincrement())
+  brand          String
+  model          String
+  imageUrl       String
+  price          Float
+  specifications String
+  condition      LaptopCondition @default(NEW)
+  usageMonths    Int             @default(0)
+  isAssigned     Boolean         @default(false)
+  isForSale      Boolean         @default(false)
+  assignedTo     User?           @relation("AssignedLaptop")
+  saleInfo       LaptopSale?
+  purchases      Purchase[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model LaptopSale {
+  id         Int      @id @default(autoincrement())
+  laptop     Laptop   @relation(fields: [laptopId], references: [id])
+  laptopId   Int      @unique
+  salePrice  Float
+  listedBy   User     @relation(fields: [listedById], references: [id])
+  listedById Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Purchase {
+  id            Int      @id @default(autoincrement())
+  user          User     @relation(fields: [userId], references: [id])
+  userId        Int
+  laptop        Laptop   @relation(fields: [laptopId], references: [id])
+  laptopId      Int
+  purchasePrice Float
+  purchasedAt   DateTime @default(now())
+}
